@@ -19,14 +19,15 @@ def image_to_byte_array(image: Image) -> bytes:
 API_KEY = os.environ.get("GOOGLE_API_KEY")
 genai.configure(api_key=API_KEY)
 
-st.image("./Google-Gemini-AI-Logo.png", width=200)
+st.image("./GSA.png", width=200)
 st.write("")
 
-gemini_pro, gemini_vision = st.tabs(["Gemini Pro", "Gemini Pro Vision"])
+gemini_pro, gemini_vision = st.tabs(["GSA-Text", "GSA-Vision"])
 
 def main():
+    st.header("GSA-Text for engaging AI-driven text conversations\nGSA-Vision for answering your image-related queries effortlessly!")
     with gemini_pro:
-        st.header("Interact with Gemini Pro")
+        st.header("Interact with GSA-Text")
         st.write("")
 
         prompt = st.text_input("prompt please...", placeholder="Prompt", label_visibility="visible")
@@ -42,7 +43,7 @@ def main():
             st.markdown(response.text)
 
     with gemini_vision:
-        st.header("Interact with Gemini Pro Vision")
+        st.header("Interact with GSA-Vision")
         st.write("")
 
         image_prompt = st.text_input("Interact with the Image", placeholder="Prompt", label_visibility="visible")
