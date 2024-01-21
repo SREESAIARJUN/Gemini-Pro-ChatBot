@@ -10,6 +10,11 @@ import io
 
 load_dotenv()
 
+def centered_image(image_path, width=None):
+    # Create a centered container using markdown
+    st.markdown("<div style='text-align: center;'>", unsafe_allow_html=True)
+    st.image(image_path, width=width)
+    st.markdown("</div>", unsafe_allow_html=True)
 def image_to_byte_array(image: Image) -> bytes:
     imgByteArr = io.BytesIO()
     image.save(imgByteArr, format=image.format)
@@ -19,7 +24,7 @@ def image_to_byte_array(image: Image) -> bytes:
 API_KEY = os.environ.get("GOOGLE_API_KEY")
 genai.configure(api_key=API_KEY)
 
-st.image("./GSA.png", width=200)
+centered_image('./GSA.png', width=200)
 st.write("")
 
 gemini_pro, gemini_vision = st.tabs(["GSA-Text", "GSA-Vision"])
