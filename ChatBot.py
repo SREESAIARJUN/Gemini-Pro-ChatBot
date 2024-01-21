@@ -25,7 +25,6 @@ st.write("")
 gemini_pro, gemini_vision = st.tabs(["GSA-Text", "GSA-Vision"])
 
 def main():
-    st.header("GSA-Text for engaging AI-driven text conversations\nGSA-Vision for answering your image-related queries effortlessly!")
     with gemini_pro:
         st.header("Interact with GSA-Text")
         st.write("")
