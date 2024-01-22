@@ -10,11 +10,11 @@ import io
 
 load_dotenv()
 
-def centered_image(image_path, width=None):
+'''def centered_image(image_path, width=None):
     # Create a centered container using markdown
     st.markdown("<div style='text-align: center;'>", unsafe_allow_html=True)
     st.image(image_path, width=width)
-    st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)'''
 def image_to_byte_array(image: Image) -> bytes:
     imgByteArr = io.BytesIO()
     image.save(imgByteArr, format=image.format)
@@ -24,14 +24,14 @@ def image_to_byte_array(image: Image) -> bytes:
 API_KEY = os.environ.get("GOOGLE_API_KEY")
 genai.configure(api_key=API_KEY)
 
-centered_image('./GSA.png', width=200)
+#centered_image('./GSA.png', width=200)
 st.write("")
 
-gemini_pro, gemini_vision = st.tabs(["GSA-Text", "GSA-Vision"])
+gemini_pro, gemini_vision = st.tabs(["Arjun-Text", "Arjun-Vision"])
 
 def main():
     with gemini_pro:
-        st.header("Interact with GSA-Text")
+        st.header("Interact with Arjun-Text")
         st.write("")
 
         prompt = st.text_input("prompt please...", placeholder="Prompt", label_visibility="visible")
@@ -47,7 +47,7 @@ def main():
             st.markdown(response.text)
 
     with gemini_vision:
-        st.header("Interact with GSA-Vision")
+        st.header("Interact with Arjun-Vision")
         st.write("")
 
         image_prompt = st.text_input("Interact with the Image", placeholder="Prompt", label_visibility="visible")
