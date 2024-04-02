@@ -21,11 +21,11 @@ genai.configure(api_key=API_KEY)
 
 st.write("")
 
-gemini_pro, gemini_vision = st.tabs(["Arjun-Text", "Arjun-Vision"])
+gemini_pro, gemini_vision = st.tabs(["Aish-Text", "Aish-Vision"])
 
 def main():
     with gemini_pro:
-        st.header("Interact with Arjun-Text")
+        st.header("Interact with Aish-Text")
         st.write("")
 
         prompt = st.text_input("prompt please...", placeholder="Prompt", label_visibility="visible")
@@ -41,7 +41,7 @@ def main():
             st.markdown(response.text)
 
     with gemini_vision:
-        st.header("Interact with Arjun-Vision")
+        st.header("Interact with Aish-Vision")
         st.write("")
 
         image_prompt = st.text_input("Interact with the Image", placeholder="Prompt", label_visibility="visible")
