@@ -7,7 +7,6 @@ from dotenv import load_dotenv
 from PIL import Image
 import os
 import io
-import base64  # Import the base64 library
 
 # Load environment variables
 load_dotenv()
@@ -76,8 +75,7 @@ def apply_custom_css():
             .image-container img {
                 border-radius: 10px;
                 margin-top: 10px;
-                max-width: 60%; /* Limit image size to 60% of container width */
-                display: block;
+                max-width: 80%;
             }
             .input-container {
                 position: fixed;
@@ -86,10 +84,6 @@ def apply_custom_css():
                 width: 100%;
                 padding: 10px;
                 background-color: white;
-                border-top: 1px solid #ddd;
-            }
-            .chat-container {
-                margin-bottom: 70px; /* Adjust for fixed input container */
             }
         </style>
     """, unsafe_allow_html=True)
@@ -100,18 +94,14 @@ def main():
 
     st.title("Maverick Bot")
 
-    # Container for chat messages
-    with st.container():
-        st.markdown('<div class="chat-container">', unsafe_allow_html=True)
-        # Display chat conversation in real-time
-        for chat in st.session_state.chat_history:
-            if chat["role"] == "user":
-                st.markdown(f'<div class="message-container user-container"><div class="user-message">{chat["content"]}</div></div>', unsafe_allow_html=True)
-                if chat.get("image"):
-                    st.markdown(f'<div class="image-container"><img src="data:image/jpeg;base64,{chat["image"]}" /></div>', unsafe_allow_html=True)
-            else:
-                st.markdown(f'<div class="message-container"><div class="bot-message">{chat["content"]}</div></div>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+    # Display chat conversation in real-time
+    for chat in st.session_state.chat_history:
+        if chat["role"] == "user":
+            st.markdown(f'<div class="message-container user-container"><div class="user-message">{chat["content"]}</div></div>', unsafe_allow_html=True)
+            if chat.get("image"):
+                st.image(Image.open(chat["image"]), caption="You uploaded", use_column_width=True)
+        else:
+            st.markdown(f'<div class="message-container"><div class="bot-message">{chat["content"]}</div></div>', unsafe_allow_html=True)
 
     # Input container
     st.markdown('<div class="input-container">', unsafe_allow_html=True)
@@ -122,19 +112,13 @@ def main():
 
     # Handle form submission
     if submit_button and (user_prompt or uploaded_image):
-        # Prepare image data if an image is uploaded
-        image_base64 = None
-        if uploaded_image:
-            image = Image.open(uploaded_image)
-            img_byte_arr = image_to_byte_array(image)
-            image_base64 = base64.b64encode(img_byte_arr).decode('utf-8')
-        
         # Add user input to the chat history
-        st.session_state.chat_history.append({"role": "user", "content": user_prompt, "image": image_base64})
+        st.session_state.chat_history.append({"role": "user", "content": user_prompt, "image": uploaded_image})
 
         # Prepare parts for the model
         parts = [glm.Part(text=user_prompt)]
         if uploaded_image:
+            image = Image.open(uploaded_image)
             parts.append(
                 glm.Part(
                     inline_data=glm.Blob(
