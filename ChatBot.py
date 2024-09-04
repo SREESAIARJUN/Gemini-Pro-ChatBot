@@ -19,81 +19,63 @@ def image_to_byte_array(image: Image) -> bytes:
 API_KEY = os.environ.get("GOOGLE_API_KEY")
 genai.configure(api_key=API_KEY)
 
-st.write("")
+# Initialize chat history
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
 
-gemini_pro, gemini_vision = st.tabs(["Aish-Text", "Aish-Vision"])
+# Unified model configuration
+generation_config = {
+    "temperature": 1,
+    "top_p": 0.95,
+    "top_k": 64,
+    "max_output_tokens": 8192,
+    "response_mime_type": "text/plain",
+}
+
+model = genai.GenerativeModel(
+    model_name="gemini-1.5-pro",
+    generation_config=generation_config,
+)
 
 def main():
-    with gemini_pro:
-        st.header("Interact with Aish-Text")
-        st.write("")
+    st.header("Maverick Bot - Conversational Image and Text Chat")
 
-        prompt = st.text_input("prompt please...", placeholder="Prompt", label_visibility="visible")
-        model = genai.GenerativeModel("gemini-pro")
+    # Display chat conversation in real-time
+    for chat in st.session_state.chat_history:
+        if chat["role"] == "user":
+            st.markdown(f"**You:** {chat['content']}")
+            if chat.get("image"):
+                st.image(Image.open(chat["image"]), caption="You uploaded", use_column_width=True)
+        else:
+            st.markdown(f"**Maverick Bot:** {chat['content']}")
 
-        if st.button("SEND",use_container_width=True):
-            response = model.generate_content(prompt)
+    user_prompt = st.text_input("Enter your message or prompt...", placeholder="Type your message here", label_visibility="visible")
+    uploaded_image = st.file_uploader("Upload an image (optional)", accept_multiple_files=False, type=["png", "jpg", "jpeg", "img", "webp"])
 
-            st.write("")
-            st.header(":blue[Response]")
-            st.write("")
+    if st.button("SEND", use_container_width=True):
+        if user_prompt or uploaded_image:
+            # Add user input to the chat history
+            st.session_state.chat_history.append({"role": "user", "content": user_prompt, "image": uploaded_image})
 
-            st.markdown(response.text)
-
-    with gemini_vision:
-        st.header("Interact with Aish-Vision")
-        st.write("")
-
-        image_prompt = st.text_input("Interact with the Image", placeholder="Prompt", label_visibility="visible")
-        uploaded_file = st.file_uploader("Choose and Image", accept_multiple_files=False, type=["png", "jpg", "jpeg", "img", "webp"])
-
-        if uploaded_file is not None:
-            st.image(Image.open(uploaded_file), use_column_width=True)
-
-            st.markdown("""
-                <style>
-                        img {
-                            border-radius: 10px;
-                        }
-                </style>
-                """, unsafe_allow_html=True)
-            
-        if st.button("GET RESPONSE", use_container_width=True):
-            model = genai.GenerativeModel("gemini-pro-vision")
-
-            if uploaded_file is not None:
-                if image_prompt != "":
-                    image = Image.open(uploaded_file)
-
-                    response = model.generate_content(
-                        glm.Content(
-                            parts = [
-                                glm.Part(text=image_prompt),
-                                glm.Part(
-                                    inline_data=glm.Blob(
-                                        mime_type="image/jpeg",
-                                        data=image_to_byte_array(image)
-                                    )
-                                )
-                            ]
+            # Prepare parts for the model
+            parts = [glm.Part(text=user_prompt)]
+            if uploaded_image:
+                image = Image.open(uploaded_image)
+                parts.append(
+                    glm.Part(
+                        inline_data=glm.Blob(
+                            mime_type="image/jpeg",
+                            data=image_to_byte_array(image)
                         )
                     )
+                )
 
-                    response.resolve()
+            # Generate the bot's response
+            response = model.generate_content(glm.Content(parts=parts))
+            st.session_state.chat_history.append({"role": "assistant", "content": response.text})
 
-                    st.write("")
-                    st.write(":blue[Response]")
-                    st.write("")
-
-                    st.markdown(response.text)
-
-                else:
-                    st.write("")
-                    st.header(":red[Please Provide a prompt]")
-
-            else:
-                st.write("")
-                st.header(":red[Please Provide an image]")
+            # Rerun to display the updated conversation
+            st.experimental_rerun()
 
 if __name__ == "__main__":
     main()
