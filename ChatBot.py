@@ -132,9 +132,6 @@ def main():
         response = model.generate_content(glm.Content(parts=parts))
         st.session_state.chat_history.append({"role": "assistant", "content": response.text})
 
-        # Clear input fields after sending
-        st.experimental_rerun()
-
     st.markdown('</div>', unsafe_allow_html=True)
 
 if __name__ == "__main__":
