@@ -1,5 +1,5 @@
-streamlit==1.25.0
-google-generativeai==0.2.0
-google-ai-generativelanguage==0.1.0
-Pillow==9.1.0
-python-dotenv==1.0.0
+streamlit
+google-generativeai
+google-ai-generativelanguage
+Pillow
+python-dotenv
