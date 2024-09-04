@@ -110,27 +110,27 @@ def main():
         uploaded_image = st.file_uploader("Upload an image (optional)", accept_multiple_files=False, type=["png", "jpg", "jpeg", "img", "webp"])
         submit_button = st.form_submit_button(label='SEND')
 
-        # Handle form submission within the form context
-        if submit_button and (user_prompt or uploaded_image):
-            # Add user input to the chat history
-            st.session_state.chat_history.append({"role": "user", "content": user_prompt, "image": uploaded_image})
+    # Handle form submission
+    if submit_button and (user_prompt or uploaded_image):
+        # Add user input to the chat history
+        st.session_state.chat_history.append({"role": "user", "content": user_prompt, "image": uploaded_image})
 
-            # Prepare parts for the model
-            parts = [glm.Part(text=user_prompt)]
-            if uploaded_image:
-                image = Image.open(uploaded_image)
-                parts.append(
-                    glm.Part(
-                        inline_data=glm.Blob(
-                            mime_type="image/jpeg",
-                            data=image_to_byte_array(image)
-                        )
+        # Prepare parts for the model
+        parts = [glm.Part(text=user_prompt)]
+        if uploaded_image:
+            image = Image.open(uploaded_image)
+            parts.append(
+                glm.Part(
+                    inline_data=glm.Blob(
+                        mime_type="image/jpeg",
+                        data=image_to_byte_array(image)
                     )
                 )
+            )
 
-            # Generate the bot's response
-            response = model.generate_content(glm.Content(parts=parts))
-            st.session_state.chat_history.append({"role": "assistant", "content": response.text})
+        # Generate the bot's response
+        response = model.generate_content(glm.Content(parts=parts))
+        st.session_state.chat_history.append({"role": "assistant", "content": response.text})
 
     st.markdown('</div>', unsafe_allow_html=True)
 
