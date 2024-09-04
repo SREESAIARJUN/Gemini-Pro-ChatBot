@@ -75,7 +75,7 @@ def apply_custom_css():
             .image-container img {
                 border-radius: 10px;
                 margin-top: 10px;
-                max-width: 80%;
+                max-width: 40%;
             }
             .input-container {
                 position: fixed;
