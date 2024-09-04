@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 from PIL import Image
 import os
 import io
+import base64  # Import the base64 library
 
 # Load environment variables
 load_dotenv()
@@ -121,14 +122,15 @@ def main():
 
     # Handle form submission
     if submit_button and (user_prompt or uploaded_image):
-        # Add user input to the chat history
+        # Prepare image data if an image is uploaded
+        image_base64 = None
         if uploaded_image:
             image = Image.open(uploaded_image)
             img_byte_arr = image_to_byte_array(image)
             image_base64 = base64.b64encode(img_byte_arr).decode('utf-8')
-            st.session_state.chat_history.append({"role": "user", "content": user_prompt, "image": image_base64})
-        else:
-            st.session_state.chat_history.append({"role": "user", "content": user_prompt, "image": None})
+        
+        # Add user input to the chat history
+        st.session_state.chat_history.append({"role": "user", "content": user_prompt, "image": image_base64})
 
         # Prepare parts for the model
         parts = [glm.Part(text=user_prompt)]
