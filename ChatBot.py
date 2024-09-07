@@ -1,3 +1,5 @@
+# Refactored code for using Google Gemini with a conversational chatbot UI
+
 import google.generativeai as genai
 import streamlit as st
 from dotenv import load_dotenv
@@ -43,6 +45,7 @@ if prompt := st.chat_input("What is up?"):
 
         # Start chat session with Gemini
         chat_session = genai.ChatSession(
+            model="gemini-1.5-pro",  # Provide the required model name
             history=[{"role": m["role"], "content": m["content"]} for m in st.session_state.messages]
         )
         response = chat_session.send_message(prompt)
