@@ -46,9 +46,13 @@ st.sidebar.button('Clear Chat History', on_click=clear_chat_history)
 
 # Function to generate response using Google Gemini
 def generate_gemini_response(prompt_input):
+    # Convert history into the expected format for Google Gemini API
+    formatted_history = [{"parts": [{"text": m["content"]}]} for m in st.session_state.messages]
+    
+    # Start a chat session with Google Gemini
     chat_session = genai.ChatSession(
-        model="gemini-1.5-pro",  # Use Gemini 1.5 Pro model
-        history=[{"role": m["role"], "content": m["content"]} for m in st.session_state.messages]
+        model="gemini-1.5-pro",  # Provide the required model name
+        history=formatted_history
     )
     response = chat_session.send_message(prompt_input, temperature=temperature, top_p=top_p, max_output_tokens=max_output_tokens)
     return response.text
