@@ -21,7 +21,7 @@ with st.sidebar:
 
     st.subheader('Models and parameters')
     selected_model = st.sidebar.selectbox('Choose a model', ['Gemini-1.5-pro'], key='selected_model')
-    temperature = st.sidebar.slider('temperature', min_value=0.01, max_value=5.0, value=1.0, step=0.01)
+    temperature = st.sidebar.slider('temperature', min_value=0.01, max_value=2.0, value=1.0, step=0.01)
     top_p = st.sidebar.slider('top_p', min_value=0.01, max_value=1.0, value=0.95, step=0.01)
     max_output_tokens = st.sidebar.slider('max_output_tokens', min_value=32, max_value=8192, value=512, step=32)
     top_k = st.sidebar.slider('top_k', min_value=1, max_value=128, value=64, step=1)
