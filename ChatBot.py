@@ -6,8 +6,7 @@ import google.generativeai as genai
 st.set_page_config(page_title="🦙💬 Maverick Bot Chatbot")
 
 # Google Generative AI Credentials (replace with your API key)
-GEMINI_API_KEY = "YOUR_API_KEY"  # Store API key securely (e.g., environment variable, secrets file)
-os.environ["GEMINI_API_KEY"] = st.secrets['GEMINI_API_KEY']
+os.environ["GEMINI_API_KEY"] = 'AIzaSyBHFH2xfKgxvIxEJL7EVyXIg64a3JmKQkI'
 
 # Configure Google Generative AI
 genai.configure(api_key=os.environ["GEMINI_API_KEY"])
