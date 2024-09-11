@@ -1,5 +1,5 @@
 streamlit
 google-generativeai
-google-ai-generativelanguage
+pypdf
+PyMuPDF
 Pillow
-python-dotenv
