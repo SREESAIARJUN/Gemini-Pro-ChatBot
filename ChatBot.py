@@ -3,6 +3,7 @@ import os
 import time
 import google.generativeai as genai
 from io import BytesIO
+import tempfile
 
 # App title and configuration
 st.set_page_config(page_title="💬 Mavericks Bot")
@@ -16,7 +17,7 @@ with st.sidebar:
     
     if gemini_api_key:
         os.environ["GEMINI_API_KEY"] = gemini_api_key
-        genai.configure(api_key="AIzaSyAcRWNDyJ1HcwiwtNoqUiDP97wwjnhVzGo")
+        genai.configure(api_key=os.environ["GEMINI_API_KEY"])
         st.success('API key provided!', icon='✅')
     else:
         st.warning('Please enter valid Gemini API credentials!', icon='⚠')
@@ -44,7 +45,11 @@ model = genai.GenerativeModel(
 
 # Function for uploading file to Gemini
 def upload_to_gemini(file_bytes, mime_type):
-    file = genai.upload_file(BytesIO(file_bytes), mime_type=mime_type)
+    # Write the file to a temporary location first
+    with tempfile.NamedTemporaryFile(delete=False, suffix=mime_type.split("/")[-1]) as temp_file:
+        temp_file.write(file_bytes)
+        temp_file_path = temp_file.name
+    file = genai.upload_file(temp_file_path, mime_type=mime_type)
     return file
 
 # Function to wait for files to be ready
@@ -68,16 +73,22 @@ def clear_chat_history():
     st.session_state.messages = [{"role": "assistant", "content": "How may I assist you today?"}]
 st.sidebar.button('Clear Chat History', on_click=clear_chat_history)
 
-# Function for generating response from Gemini
+# Function for generating response from Gemini, including chat history
 def generate_gemini_response(prompt_input, files=None):
-    chat_session = model.start_chat(
-        history=[{"role": "user", "parts": [prompt_input]}]
-    )
+    # Prepare chat history
+    chat_history = [{"role": msg["role"], "content": msg["content"]} for msg in st.session_state.messages]
+    
+    # Create a chat session with the chat history
+    chat_session = model.start_chat(history=chat_history)
+
     if files:
         wait_for_files_active(files)
         for file in files:
             chat_session.send_message(file)
+
+    # Send user input as a message and get the response
     response = chat_session.send_message(prompt_input)
+    
     return response.text
 
 # User inputs
