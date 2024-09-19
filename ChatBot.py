@@ -16,7 +16,7 @@ with st.sidebar:
     
     if gemini_api_key:
         os.environ["GEMINI_API_KEY"] = gemini_api_key
-        genai.configure(api_key=os.environ["GEMINI_API_KEY"])
+        genai.configure(api_key="AIzaSyAcRWNDyJ1HcwiwtNoqUiDP97wwjnhVzGo")
         st.success('API key provided!', icon='✅')
     else:
         st.warning('Please enter valid Gemini API credentials!', icon='⚠')
