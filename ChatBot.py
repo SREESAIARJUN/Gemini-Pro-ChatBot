@@ -78,6 +78,7 @@ for message in st.session_state.messages:
 
 def clear_chat_history():
     st.session_state.messages = [{"role": "model", "parts": ["How may I assist you today?"]}]
+    st.session_state.files = []
 st.sidebar.button('Clear Chat History', on_click=clear_chat_history)
 
 # Function for generating response from Gemini, including chat history
@@ -90,61 +91,79 @@ def generate_gemini_response(prompt_input, files=None):
             {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
             {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
             {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
-        ],
-        system_instruction="You are Mavericks Bot, an advanced AI assistant created by Team Mavericks. You possess sophisticated image and video recognition capabilities, allowing you to analyze, understand, and provide insights on visual content. You also engage in voice-based interactions.",
+        ]
     )
     
-    chat = model.start_chat(
-        history=st.session_state.messages)
+    chat = model.start_chat(history=[])
     
+    # Add system instruction
+    chat.send_message("You are Mavericks Bot, an advanced AI assistant created by Team Mavericks. You possess sophisticated image and video recognition capabilities, allowing you to analyze, understand, and provide insights on visual content. You also engage in voice-based interactions.")
+    
+    # Add chat history
+    for message in st.session_state.messages:
+        chat.send_message(message["parts"][0])
+    
+    # Add files to the conversation
     if files:
         wait_for_files_active(files)
         for file in files:
             chat.send_message(file)
     
+    # Send the user's prompt
     response = chat.send_message(prompt_input)
     return response.text
 
 # Main content: File Upload and Chat Input
-files = []
+if "files" not in st.session_state:
+    st.session_state.files = []
+
 prompt = st.chat_input()
 
 if use_image:
     image = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"])
-    if image:
+    if image and "image" not in st.session_state:
         image_bytes = image.read()
         st.image(image, caption="Uploaded Image", use_column_width=True)
-        st.session_state.messages.append({"role": "model", "parts": ["Processing image..."]})
+        st.session_state.messages.append({"role": "user", "parts": ["I've uploaded an image. Please analyze it."]})
         image_file = upload_to_gemini(image_bytes, "image/jpeg")
-        files.append(image_file)
+        st.session_state.files.append(image_file)
+        st.session_state.image = True
 
 if use_video:
     video = st.file_uploader("Upload a video", type=["mp4", "mov"])
-    if video:
+    if video and "video" not in st.session_state:
         video_bytes = video.read()
         st.video(video)
-        st.session_state.messages.append({"role": "model", "parts": ["Processing video..."]})
+        st.session_state.messages.append({"role": "user", "parts": ["I've uploaded a video. Please analyze it."]})
         video_file = upload_to_gemini(video_bytes, "video/mp4")
-        files.append(video_file)
+        st.session_state.files.append(video_file)
+        st.session_state.video = True
 
 if use_audio:
     audio = st.file_uploader("Upload an audio file", type=["ogg", "mp3", "wav"])
-    if audio:
+    if audio and "audio" not in st.session_state:
         audio_bytes = audio.read()
         st.audio(audio)
-        st.session_state.messages.append({"role": "model", "parts": ["Processing audio..."]})
+        st.session_state.messages.append({"role": "user", "parts": ["I've uploaded an audio file. Please analyze it."]})
         audio_file = upload_to_gemini(audio_bytes, "audio/ogg")
-        files.append(audio_file)
+        st.session_state.files.append(audio_file)
+        st.session_state.audio = True
 
-# Generate response when a prompt is entered
-if prompt:
-    st.session_state.messages.append({"role": "user", "parts": [prompt]})
-    with st.chat_message("user"):
-        st.write(prompt)
+# Generate response when a prompt is entered or when media is uploaded
+if prompt or (st.session_state.files and len(st.session_state.files) > len(st.session_state.messages) - 1):
+    if prompt:
+        st.session_state.messages.append({"role": "user", "parts": [prompt]})
+        with st.chat_message("user"):
+            st.write(prompt)
 
     # Generate response from Gemini
     with st.chat_message("model"):
         with st.spinner("Thinking..."):
-            response = generate_gemini_response(prompt, files)
+            response = generate_gemini_response(prompt or "Please analyze the uploaded media.", st.session_state.files)
             st.write(response)
             st.session_state.messages.append({"role": "model", "parts": [response]})
+
+# Display chat history
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.write(message["parts"][0])
