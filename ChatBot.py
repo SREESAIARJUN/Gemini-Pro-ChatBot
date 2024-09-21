@@ -139,30 +139,3 @@ if prompt:
             response = generate_gemini_response(prompt, files)
             st.write(response)
             st.session_state.messages.append({"role": "assistant", "content": response})
-content_copy
-Use code with caution.
-Python
-
-Explanation of Changes:
-
-Sidebar Multimedia Options:
-
-Added checkboxes in the sidebar for "Enable Image Upload", "Enable Video Upload", and "Enable Audio Upload".
-
-The variables use_image, use_video, and use_audio will store True or False based on the checkbox selections.
-
-Conditional File Uploads:
-
-The file upload components (st.file_uploader) are now wrapped in conditional statements (if use_image:, if use_video:, if use_audio:).
-
-File upload components will only be displayed if the corresponding checkbox in the sidebar is checked.
-
-How it Works:
-
-User Interaction: Users can now control the availability of multimedia options directly from the sidebar.
-
-Dynamic Content: The app will dynamically display the file upload components based on the user's selections.
-
-Efficient Processing: By only enabling the necessary multimedia options, you can optimize processing time and resources.
-
-This enhancement provides users with greater flexibility and control over their chatbot experience, allowing them to tailor the interaction to their specific needs.
