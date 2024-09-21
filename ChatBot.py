@@ -8,11 +8,12 @@ import tempfile
 # App title and configuration
 st.set_page_config(page_title="💬 Mavericks Bot")
 
-# API keys
+# Sidebar: API key and model parameters
 with st.sidebar:
     st.title('💬 Mavericks Chatbot')
     st.write("This chatbot is built using Google's Gemini API for advanced language, image, voice, and video processing capabilities.")
     
+    # API key input
     gemini_api_key = st.secrets.get('GEMINI_API_KEY') or st.text_input('Enter Gemini API key:', type='password')
     
     if gemini_api_key:
@@ -22,12 +23,25 @@ with st.sidebar:
     else:
         st.warning('Please enter valid Gemini API credentials!', icon='⚠')
 
-# Create the model
+    # Adjustable model parameters
+    st.subheader('Model Parameters')
+    temperature = st.slider("Temperature", 0.1, 1.0, 1.0, step=0.1)
+    top_p = st.slider("Top P", 0.1, 1.0, 0.95, step=0.05)
+    top_k = st.slider("Top K", 1, 100, 64)
+    max_output_tokens = st.slider("Max Output Tokens", 100, 8192, 8192)
+
+    # Multimedia input options
+    st.subheader('Input Types')
+    use_image = st.checkbox("Upload Image")
+    use_video = st.checkbox("Upload Video")
+    use_audio = st.checkbox("Upload Audio")
+
+# Model configuration
 generation_config = {
-    "temperature": 1,
-    "top_p": 0.95,
-    "top_k": 64,
-    "max_output_tokens": 8192,
+    "temperature": temperature,
+    "top_p": top_p,
+    "top_k": top_k,
+    "max_output_tokens": max_output_tokens,
     "response_mime_type": "text/plain",
 }
 
@@ -45,7 +59,8 @@ model = genai.GenerativeModel(
 
 # Function for uploading file to Gemini
 def upload_to_gemini(file_bytes, mime_type):
-    with tempfile.NamedTemporaryFile(delete=False, suffix="."+mime_type.split("/")[-1]) as temp_file:
+    # Write the file to a temporary location first
+    with tempfile.NamedTemporaryFile(delete=False, suffix=mime_type.split("/")[-1]) as temp_file:
         temp_file.write(file_bytes)
         temp_file_path = temp_file.name
     file = genai.upload_file(temp_file_path, mime_type=mime_type)
@@ -72,47 +87,39 @@ def clear_chat_history():
     st.session_state.messages = [{"role": "assistant", "content": "How may I assist you today?"}]
 st.sidebar.button('Clear Chat History', on_click=clear_chat_history)
 
-# Function for generating response from Gemini
+# Function for generating response from Gemini, including chat history
 def generate_gemini_response(prompt_input, files=None):
     # Prepare chat history
     chat_history = [{"role": msg["role"], "content": msg["content"]} for msg in st.session_state.messages]
     
-    # Start a chat session
+    # Create a chat session with the chat history
     chat_session = model.start_chat(history=chat_history)
 
-    # Handle file processing
     if files:
         wait_for_files_active(files)
         for file in files:
-            chat_session.send_message({"role": "user", "content": file})
+            chat_session.send_message(file)
 
     # Send user input as a message and get the response
-    response = chat_session.send_message({"role": "user", "content": prompt_input})
+    response = chat_session.send_message(prompt_input)
     
     return response.text
 
-# User inputs
-image = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"])
-video = st.file_uploader("Upload a video", type=["mp4", "mov"])
-audio = st.file_uploader("Upload an audio file", type=["ogg", "mp3", "wav"])
+# Main content: File Upload and Chat Input
+files = []
 prompt = st.chat_input()
 
-if prompt:
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.write(prompt)
-
-    files = []
-    
-    # Handle image upload
+if use_image:
+    image = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"])
     if image:
         image_bytes = image.read()
         st.image(image, caption="Uploaded Image", use_column_width=True)
         st.session_state.messages.append({"role": "assistant", "content": "Processing image..."})
         image_file = upload_to_gemini(image_bytes, "image/jpeg")
         files.append(image_file)
-    
-    # Handle video upload
+
+if use_video:
+    video = st.file_uploader("Upload a video", type=["mp4", "mov"])
     if video:
         video_bytes = video.read()
         st.video(video)
@@ -120,13 +127,20 @@ if prompt:
         video_file = upload_to_gemini(video_bytes, "video/mp4")
         files.append(video_file)
 
-    # Handle audio upload
+if use_audio:
+    audio = st.file_uploader("Upload an audio file", type=["ogg", "mp3", "wav"])
     if audio:
         audio_bytes = audio.read()
         st.audio(audio)
         st.session_state.messages.append({"role": "assistant", "content": "Processing audio..."})
         audio_file = upload_to_gemini(audio_bytes, "audio/ogg")
         files.append(audio_file)
+
+# Generate response when a prompt is entered
+if prompt:
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.write(prompt)
 
     # Generate response from Gemini
     with st.chat_message("assistant"):
