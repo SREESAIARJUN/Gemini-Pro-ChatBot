@@ -90,9 +90,10 @@ st.sidebar.button('Clear Chat History', on_click=clear_chat_history)
 
 # Function for generating response from Gemini, including chat history
 def generate_gemini_response(prompt_input, files=None):
-    # Prepare chat history by mapping the messages to the correct format
+    # Prepare chat history by mapping the messages to the correct format with valid roles
     chat_history = [
-        {"text": msg["content"]} for msg in st.session_state.messages
+        {"role": msg["role"] if msg["role"] in ["user", "model"] else "user", "content": msg["content"]}
+        for msg in st.session_state.messages
     ]
     
     # Create a chat session with the chat history
@@ -107,6 +108,7 @@ def generate_gemini_response(prompt_input, files=None):
     response = chat_session.send_message(prompt_input)
     
     return response.text
+
 
 
 # Main content: File Upload and Chat Input
