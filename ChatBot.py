@@ -83,9 +83,11 @@ st.sidebar.button('Clear Chat History', on_click=clear_chat_history)
 # --- Generate Gemini Response with Chat History ---
 def generate_gemini_response(prompt_input, files=None):
     chat_history = [{"author": msg["role"], "content": msg["content"]} for msg in st.session_state.messages]
+
+    # Pass generation_config to the function, NOT individual parameters
     response = model.generate_content(
         prompt_input,
-        **generation_config,
+        generation_config=generation_config, # Pass the entire dictionary
         history=chat_history,
         files=files
     )
