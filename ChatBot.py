@@ -82,28 +82,20 @@ st.sidebar.button('Clear Chat History', on_click=clear_chat_history)
 
 # --- Generate Gemini Response with Chat History ---
 def generate_gemini_response(prompt_input, files=None):
-    # Construct the chat history as part of the prompt
+    # Construct the chat history 
     formatted_history = ""
     for i, msg in enumerate(st.session_state.messages):
-        if i > 0:  # Skip the initial assistant message
+        if i > 0:  
             formatted_history += f"{msg['role']}: {msg['content']}\n"
 
     # Combine chat history with the current prompt
     full_prompt = f"{formatted_history}user: {prompt_input}"
 
-    # Handle multimedia (if any)
-    if files:
-        for file in files:
-            # 1. Upload the file 
-            file_resource_name = file.name  # Get the resource name after uploading
-
-            # 2. Add file reference to the prompt
-            full_prompt += f'\n<multipart_form_data>\n  resource_name: {file_resource_name}\n</multipart_form_data>'
-
-    # Generate response 
+    # Generate response (using the 'files' parameter directly)
     response = model.generate_content(
         full_prompt,
         generation_config=generation_config,
+        files=files  # Pass the files list here
     )
     return response.text
 
