@@ -23,18 +23,19 @@ with st.sidebar:
     else:
         st.warning('Please enter valid Gemini API credentials!', icon='⚠')
 
-    # Adjustable model parameters
-    st.subheader('Model Parameters')
-    temperature = st.slider("Temperature", 0.1, 1.0, 1.0, step=0.1)
-    top_p = st.slider("Top P", 0.1, 1.0, 0.95, step=0.05)
-    top_k = st.slider("Top K", 1, 100, 64)
-    max_output_tokens = st.slider("Max Output Tokens", 100, 8192, 8192)
 
     # Multimedia input options
     st.subheader('Input Types')
     use_image = st.checkbox("Upload Image")
     use_video = st.checkbox("Upload Video")
     use_audio = st.checkbox("Upload Audio")
+
+    # Adjustable model parameters
+    st.subheader('Model Parameters')
+    temperature = st.slider("Temperature", 0.1, 1.0, 1.0, step=0.1)
+    top_p = st.slider("Top P", 0.1, 1.0, 0.95, step=0.05)
+    top_k = st.slider("Top K", 1, 100, 64)
+    max_output_tokens = st.slider("Max Output Tokens", 100, 8192, 8192)
 
 # Model configuration
 generation_config = {
@@ -89,8 +90,10 @@ st.sidebar.button('Clear Chat History', on_click=clear_chat_history)
 
 # Function for generating response from Gemini, including chat history
 def generate_gemini_response(prompt_input, files=None):
-    # Prepare chat history
-    chat_history = [{"role": msg["role"], "content": msg["content"]} for msg in st.session_state.messages]
+    # Prepare chat history by mapping the messages to the correct format
+    chat_history = [
+        {"text": msg["content"]} for msg in st.session_state.messages
+    ]
     
     # Create a chat session with the chat history
     chat_session = model.start_chat(history=chat_history)
@@ -104,6 +107,7 @@ def generate_gemini_response(prompt_input, files=None):
     response = chat_session.send_message(prompt_input)
     
     return response.text
+
 
 # Main content: File Upload and Chat Input
 files = []
