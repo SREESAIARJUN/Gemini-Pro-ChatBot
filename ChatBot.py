@@ -45,8 +45,7 @@ model = genai.GenerativeModel(
 
 # Function for uploading file to Gemini
 def upload_to_gemini(file_bytes, mime_type):
-    # Write the file to a temporary location first
-    with tempfile.NamedTemporaryFile(delete=False, suffix=mime_type.split("/")[-1]) as temp_file:
+    with tempfile.NamedTemporaryFile(delete=False, suffix="."+mime_type.split("/")[-1]) as temp_file:
         temp_file.write(file_bytes)
         temp_file_path = temp_file.name
     file = genai.upload_file(temp_file_path, mime_type=mime_type)
@@ -73,21 +72,22 @@ def clear_chat_history():
     st.session_state.messages = [{"role": "assistant", "content": "How may I assist you today?"}]
 st.sidebar.button('Clear Chat History', on_click=clear_chat_history)
 
-# Function for generating response from Gemini, including chat history
+# Function for generating response from Gemini
 def generate_gemini_response(prompt_input, files=None):
     # Prepare chat history
     chat_history = [{"role": msg["role"], "content": msg["content"]} for msg in st.session_state.messages]
     
-    # Create a chat session with the chat history
+    # Start a chat session
     chat_session = model.start_chat(history=chat_history)
 
+    # Handle file processing
     if files:
         wait_for_files_active(files)
         for file in files:
-            chat_session.send_message(file)
+            chat_session.send_message({"role": "user", "content": file})
 
     # Send user input as a message and get the response
-    response = chat_session.send_message(prompt_input)
+    response = chat_session.send_message({"role": "user", "content": prompt_input})
     
     return response.text
 
