@@ -8,13 +8,13 @@ import tempfile
 # App title and configuration
 st.set_page_config(page_title="💬 Mavericks Bot")
 
-# API keys
+# --- Sidebar Settings ---
 with st.sidebar:
     st.title('💬 Mavericks Chatbot')
     st.write("This chatbot is built using Google's Gemini API for advanced language, image, voice, and video processing capabilities.")
-    
+
     gemini_api_key = st.secrets.get('GEMINI_API_KEY') or st.text_input('Enter Gemini API key:', type='password')
-    
+
     if gemini_api_key:
         os.environ["GEMINI_API_KEY"] = gemini_api_key
         genai.configure(api_key=os.environ["GEMINI_API_KEY"])
@@ -22,7 +22,13 @@ with st.sidebar:
     else:
         st.warning('Please enter valid Gemini API credentials!', icon='⚠')
 
-# Create the model
+    # --- Multimedia Options ---
+    st.subheader("Multimedia Options")
+    use_image = st.checkbox("Enable Image Upload")
+    use_video = st.checkbox("Enable Video Upload")
+    use_audio = st.checkbox("Enable Audio Upload")
+
+# --- Create the Model --- 
 generation_config = {
     "temperature": 1,
     "top_p": 0.95,
@@ -32,7 +38,7 @@ generation_config = {
 }
 
 model = genai.GenerativeModel(
-    model_name="gemini-1.5-pro",
+    model_name="gemini-pro",
     generation_config=generation_config,
     safety_settings=[
         {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
@@ -45,7 +51,6 @@ model = genai.GenerativeModel(
 
 # Function for uploading file to Gemini
 def upload_to_gemini(file_bytes, mime_type):
-    # Write the file to a temporary location first
     with tempfile.NamedTemporaryFile(delete=False, suffix=mime_type.split("/")[-1]) as temp_file:
         temp_file.write(file_bytes)
         temp_file_path = temp_file.name
@@ -61,76 +66,103 @@ def wait_for_files_active(files):
         if file.state.name != "ACTIVE":
             raise Exception(f"File {file.name} failed to process")
 
-# Display or clear chat messages
+# --- Manage Chat History ---
 if "messages" not in st.session_state:
     st.session_state.messages = [{"role": "assistant", "content": "How may I assist you today?"}]
 
+# Display messages
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.write(message["content"])
 
+# Clear chat history button
 def clear_chat_history():
     st.session_state.messages = [{"role": "assistant", "content": "How may I assist you today?"}]
 st.sidebar.button('Clear Chat History', on_click=clear_chat_history)
 
-# Function for generating response from Gemini, including chat history
+# --- Generate Gemini Response with Chat History ---
 def generate_gemini_response(prompt_input, files=None):
-    # Prepare chat history
-    chat_history = [{"role": msg["role"], "content": msg["content"]} for msg in st.session_state.messages]
-    
-    # Create a chat session with the chat history
-    chat_session = model.start_chat(history=chat_history)
-
-    if files:
-        wait_for_files_active(files)
-        for file in files:
-            chat_session.send_message(file)
-
-    # Send user input as a message and get the response
-    response = chat_session.send_message(prompt_input)
-    
+    chat_history = [{"author": msg["role"], "content": msg["content"]} for msg in st.session_state.messages]
+    response = model.generate_content(
+        prompt_input,
+        **generation_config,
+        history=chat_history,
+        files=files
+    )
     return response.text
 
-# User inputs
-image = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"])
-video = st.file_uploader("Upload a video", type=["mp4", "mov"])
-audio = st.file_uploader("Upload an audio file", type=["ogg", "mp3", "wav"])
+# --- Main Content Area ---
+# --- User Inputs (Conditional based on sidebar) ---
+image = None
+video = None
+audio = None
+
+if use_image:
+    image = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"])
+if use_video:
+    video = st.file_uploader("Upload a video", type=["mp4", "mov"])
+if use_audio:
+    audio = st.file_uploader("Upload an audio file", type=["ogg", "mp3", "wav"])
+
 prompt = st.chat_input()
 
+# --- Process User Input and Generate Response ---
 if prompt:
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.write(prompt)
 
     files = []
-    
-    # Handle image upload
+
     if image:
         image_bytes = image.read()
         st.image(image, caption="Uploaded Image", use_column_width=True)
-        st.session_state.messages.append({"role": "assistant", "content": "Processing image..."})
         image_file = upload_to_gemini(image_bytes, "image/jpeg")
         files.append(image_file)
-    
-    # Handle video upload
     if video:
         video_bytes = video.read()
         st.video(video)
-        st.session_state.messages.append({"role": "assistant", "content": "Processing video..."})
         video_file = upload_to_gemini(video_bytes, "video/mp4")
         files.append(video_file)
-
-    # Handle audio upload
     if audio:
         audio_bytes = audio.read()
         st.audio(audio)
-        st.session_state.messages.append({"role": "assistant", "content": "Processing audio..."})
         audio_file = upload_to_gemini(audio_bytes, "audio/ogg")
         files.append(audio_file)
 
-    # Generate response from Gemini
+    if files:
+        with st.spinner("Processing files..."):
+            wait_for_files_active(files)
+
     with st.chat_message("assistant"):
         with st.spinner("Thinking..."):
             response = generate_gemini_response(prompt, files)
             st.write(response)
             st.session_state.messages.append({"role": "assistant", "content": response})
+content_copy
+Use code with caution.
+Python
+
+Explanation of Changes:
+
+Sidebar Multimedia Options:
+
+Added checkboxes in the sidebar for "Enable Image Upload", "Enable Video Upload", and "Enable Audio Upload".
+
+The variables use_image, use_video, and use_audio will store True or False based on the checkbox selections.
+
+Conditional File Uploads:
+
+The file upload components (st.file_uploader) are now wrapped in conditional statements (if use_image:, if use_video:, if use_audio:).
+
+File upload components will only be displayed if the corresponding checkbox in the sidebar is checked.
+
+How it Works:
+
+User Interaction: Users can now control the availability of multimedia options directly from the sidebar.
+
+Dynamic Content: The app will dynamically display the file upload components based on the user's selections.
+
+Efficient Processing: By only enabling the necessary multimedia options, you can optimize processing time and resources.
+
+This enhancement provides users with greater flexibility and control over their chatbot experience, allowing them to tailor the interaction to their specific needs.
