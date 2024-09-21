@@ -56,11 +56,17 @@ def upload_to_gemini(file_bytes, mime_type):
 # Function to wait for files to be ready
 def wait_for_files_active(files):
     for file in files:
-        while file.state == genai.FileState.PROCESSING:
-            time.sleep(1)
-            file = genai.get_file(file.name)
-        if file.state != genai.FileState.ACTIVE:
-            raise Exception(f"File {file.name} failed to process")
+        while True:
+            try:
+                updated_file = genai.get_file(file.name)
+                if updated_file.state == "ACTIVE":
+                    break
+                elif updated_file.state == "FAILED":
+                    raise Exception(f"File {file.name} failed to process")
+                time.sleep(1)
+            except Exception as e:
+                st.error(f"Error processing file: {str(e)}")
+                break
 
 # Display or clear chat messages
 if "messages" not in st.session_state:
@@ -84,11 +90,13 @@ def generate_gemini_response(prompt_input, files=None):
             {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
             {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
             {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
-        ],
-    system_instruction="You are Mavericks Bot, an advanced AI assistant created by Team Mavericks. You possess sophisticated image and video recognition capabilities, allowing you to analyze, understand, and provide insights on visual content. You also engage in voice-based interactions.",
+        ]
     )
     
-    chat = model.start_chat(history=st.session_state.messages)
+    chat = model.start_chat(
+        history=st.session_state.messages,
+        system_instruction="You are Mavericks Bot, an advanced AI assistant created by Team Mavericks. You possess sophisticated image and video recognition capabilities, allowing you to analyze, understand, and provide insights on visual content. You also engage in voice-based interactions."
+    )
     
     if files:
         wait_for_files_active(files)
