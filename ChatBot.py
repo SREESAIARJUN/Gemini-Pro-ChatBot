@@ -9,9 +9,10 @@ import tempfile
 st.set_page_config(page_title="💬 Mavericks Bot", layout="wide")
 
 # Define style constants for professional tool
-USER_COLOR = "#D4E157"  # Muted green for user message background
-MODEL_COLOR = "#42A5F5"  # Professional blue for model message background
-TEXT_COLOR = "#FFFFFF"  # White text for all messages for contrast
+USER_COLOR = "#E8E8E8"  # Muted green for user message background
+MODEL_COLOR = "#036165"  # Professional blue for model message background
+USER_TEXT_COLOR = "#000000"  # White text for all messages for contrast
+MODEL_TEXT_COLOR = "#FFFFFF"
 BORDER_RADIUS = "8px"  # Rounded corners for chat bubbles
 FONT_FAMILY = "Arial, sans-serif"  # Professional font family
 USER_LOGO = "🧑‍💻"  # User's logo
@@ -80,18 +81,22 @@ def display_message(message):
     if message["role"] == "user":
         st.markdown(
             f"""
-            <div style='display: inline-block; background-color: {USER_COLOR}; color: {TEXT_COLOR}; 
-            padding: 10px; border-radius: {BORDER_RADIUS}; margin: 5px; font-family: {FONT_FAMILY};'>
-                <span>{USER_LOGO}</span> <span>{message["content"]}</span>
+            <div style='display: flex; justify-content: flex-end;'>
+                <div style='background-color: {USER_COLOR}; color: {USER_TEXT_COLOR}; padding: 10px; 
+                border-radius: {BORDER_RADIUS}; margin: 5px; max-width: 70%; font-family: {FONT_FAMILY};'>
+                    <span>{message["content"]}</span> <span>{USER_LOGO}</span>
+                </div>
             </div>
             """, unsafe_allow_html=True
         )
     else:
         st.markdown(
             f"""
-            <div style='display: inline-block; background-color: {MODEL_COLOR}; color: {TEXT_COLOR}; 
-            padding: 10px; border-radius: {BORDER_RADIUS}; margin: 5px; font-family: {FONT_FAMILY};'>
-                <span>{MODEL_LOGO}</span> <span>{message["content"]}</span>
+            <div style='display: flex; justify-content: flex-start;'>
+                <div style='background-color: {MODEL_COLOR}; color: {MODEL_TEXT_COLOR}; padding: 10px; 
+                border-radius: {BORDER_RADIUS}; margin: 5px; max-width: 70%; font-family: {FONT_FAMILY};'>
+                    <span>{MODEL_LOGO}</span> <span>{message["content"]}</span>
+                </div>
             </div>
             """, unsafe_allow_html=True
         )
