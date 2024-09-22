@@ -4,6 +4,7 @@ import time
 import google.generativeai as genai
 from io import BytesIO
 import tempfile
+import fitz  # PyMuPDF for document processing
 
 # App title and configuration
 st.set_page_config(page_title="💬 Mavericks Bot")
@@ -11,7 +12,7 @@ st.set_page_config(page_title="💬 Mavericks Bot")
 # Sidebar: API key and model parameters
 with st.sidebar:
     st.title('💬 Mavericks Chatbot')
-    st.write("This chatbot is built using Google's Gemini API for advanced language, image, voice, and video processing capabilities.")
+    st.write("This chatbot uses Google's Gemini API for advanced language, image, voice, video, and document processing.")
     
     # API key input
     gemini_api_key = st.secrets.get('GEMINI_API_KEY') or st.text_input('Enter Gemini API key:', type='password')
@@ -28,6 +29,7 @@ with st.sidebar:
     use_image = st.checkbox("Upload Image")
     use_video = st.checkbox("Upload Video")
     use_audio = st.checkbox("Upload Audio")
+    use_document = st.checkbox("Upload Document")
 
     # Adjustable model parameters
     st.subheader('Model Parameters')
@@ -68,6 +70,14 @@ def wait_for_files_active(files):
                 st.error(f"Error processing file: {str(e)}")
                 break
 
+# Function to extract text from PDF
+def extract_text_from_pdf(file):
+    text = ""
+    with fitz.open(stream=file.read(), filetype="pdf") as doc:
+        for page in doc:
+            text += page.get_text()
+    return text
+
 # Display or clear chat messages
 if "messages" not in st.session_state:
     st.session_state.messages = [{"role": "model", "parts": ["How may I assist you today?"]}]
@@ -97,7 +107,7 @@ def generate_gemini_response(prompt_input, files=None):
     chat = model.start_chat(history=[])
     
     # Add system instruction
-    chat.send_message("You are Mavericks Bot, an advanced AI assistant created by Team Mavericks. You possess sophisticated image and video recognition capabilities, allowing you to analyze, understand, and provide insights on visual content. You also engage in voice-based interactions.")
+    chat.send_message("You are Mavericks Bot, an advanced AI assistant created by Team Mavericks. You possess sophisticated image, video, audio, and document recognition capabilities, allowing you to analyze, understand, and provide insights on various types of content.")
     
     # Add chat history
     for message in st.session_state.messages:
@@ -149,6 +159,19 @@ if use_audio:
         st.session_state.files.append(audio_file)
         st.session_state.audio = True
 
+if use_document:
+    document = st.file_uploader("Upload a document", type=["pdf", "txt"])
+    if document and "document" not in st.session_state:
+        if document.type == "application/pdf":
+            doc_text = extract_text_from_pdf(document)
+        else:
+            doc_text = document.getvalue().decode("utf-8")
+        st.text_area("Document Content", doc_text, height=200)
+        st.session_state.messages.append({"role": "user", "parts": ["I've uploaded a document. Please analyze its content."]})
+        doc_file = upload_to_gemini(doc_text.encode(), "text/plain")
+        st.session_state.files.append(doc_file)
+        st.session_state.document = True
+
 # Generate response when a prompt is entered or when media is uploaded
 if prompt or (st.session_state.files and len(st.session_state.files) > len(st.session_state.messages) - 1):
     if prompt:
@@ -159,7 +182,7 @@ if prompt or (st.session_state.files and len(st.session_state.files) > len(st.se
     # Generate response from Gemini
     with st.chat_message("model"):
         with st.spinner("Thinking..."):
-            response = generate_gemini_response(prompt or "Please analyze the uploaded media.", st.session_state.files)
+            response = generate_gemini_response(prompt or "Please analyze the uploaded content.", st.session_state.files)
             st.write(response)
             st.session_state.messages.append({"role": "model", "parts": [response]})
 
