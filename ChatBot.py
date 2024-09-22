@@ -9,10 +9,10 @@ import tempfile
 st.set_page_config(page_title="💬 Mavericks Bot", layout="wide")
 
 # Define style constants for professional tool
-USER_COLOR = "#f7f7f7"  # Light gray for user message background
-MODEL_COLOR = "#d6e4f0"  # Soft blue for model message background
-TEXT_COLOR = "#333333"  # Dark gray for all text
-BORDER_RADIUS = "8px"  # Rounded corners for chat bubbles, but less dramatic
+USER_COLOR = "#D4E157"  # Muted green for user message background
+MODEL_COLOR = "#42A5F5"  # Professional blue for model message background
+TEXT_COLOR = "#FFFFFF"  # White text for all messages for contrast
+BORDER_RADIUS = "8px"  # Rounded corners for chat bubbles
 FONT_FAMILY = "Arial, sans-serif"  # Professional font family
 USER_LOGO = "🧑‍💻"  # User's logo
 MODEL_LOGO = "🤖"  # Model's logo
@@ -80,7 +80,7 @@ def display_message(message):
     if message["role"] == "user":
         st.markdown(
             f"""
-            <div style='text-align: right; background-color: {USER_COLOR}; color: {TEXT_COLOR}; 
+            <div style='display: inline-block; background-color: {USER_COLOR}; color: {TEXT_COLOR}; 
             padding: 10px; border-radius: {BORDER_RADIUS}; margin: 5px; font-family: {FONT_FAMILY};'>
                 <span>{USER_LOGO}</span> <span>{message["content"]}</span>
             </div>
@@ -89,7 +89,7 @@ def display_message(message):
     else:
         st.markdown(
             f"""
-            <div style='text-align: left; background-color: {MODEL_COLOR}; color: {TEXT_COLOR}; 
+            <div style='display: inline-block; background-color: {MODEL_COLOR}; color: {TEXT_COLOR}; 
             padding: 10px; border-radius: {BORDER_RADIUS}; margin: 5px; font-family: {FONT_FAMILY};'>
                 <span>{MODEL_LOGO}</span> <span>{message["content"]}</span>
             </div>
