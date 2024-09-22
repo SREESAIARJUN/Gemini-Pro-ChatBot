@@ -29,10 +29,10 @@ with st.sidebar:
 
     # Adjustable model parameters
     st.subheader('Model Parameters')
-    temperature = st.slider("Temperature", 0.0, 1.0, 0.9, step=0.1)
+    temperature = st.slider("Temperature", 0.0, 2.0, 1.0, step=0.1)
     top_p = st.slider("Top P", 0.0, 1.0, 0.95, step=0.05)
-    top_k = st.slider("Top K", 1, 100, 40)
-    max_output_tokens = st.slider("Max Output Tokens", 100, 2048, 1024)
+    top_k = st.slider("Top K", 1, 100, 64)
+    max_output_tokens = st.slider("Max Output Tokens", 100, 8192, 8192)
 
 # Model configuration
 generation_config = {
@@ -85,7 +85,14 @@ def generate_gemini_response(prompt_input, files=None):
     
     response = model.generate_content(
         contents,
-        generation_config=generation_config
+        generation_config=generation_config,
+        safety_settings=[
+            {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+        ],
+        system_instruction="You are Mavericks Bot, an advanced AI assistant created by Team Mavericks. You possess sophisticated image and video recognition capabilities, allowing you to analyze, understand, and provide insights on visual content. You also engage in voice-based interactions.",
     )
     return response.text
 
