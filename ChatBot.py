@@ -76,8 +76,8 @@ st.sidebar.button('Clear Chat History', on_click=clear_chat_history)
 
 # Function for generating response from Gemini, including chat history
 def generate_gemini_response(prompt_input, files=None):
-    model = genai.GenerativeModel(
-        model_name="gemini-1.5-pro")""",
+    model = genai.GenerativeModel(model_name="gemini-1.5-pro")
+    """,
         generation_config=generation_config,
         safety_settings=[
             {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
