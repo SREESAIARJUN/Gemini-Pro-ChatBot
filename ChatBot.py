@@ -137,7 +137,7 @@ def generate_gemini_response(prompt_input, files=None):
 
 # Main content: File Upload and Chat Input
 files = []
-prompt = st.chat_input(placeholder="Type your message here...", label_visibility="hidden")
+prompt = st.chat_input(placeholder="Type your message here...")
 
 if use_image:
     image = st.file_uploader("Upload an image", type=["png", "jpeg", "webp", "heic", "heif"])
