@@ -2,6 +2,7 @@ import streamlit as st
 import os
 import time
 import google.generativeai as genai
+from io import BytesIO
 
 # App title and configuration
 st.set_page_config(page_title="💬 Mavericks Bot")
@@ -59,6 +60,16 @@ def clear_chat_history():
     st.session_state.messages = [{"role": "model", "parts": ["How may I assist you today?"]}]
 st.sidebar.button('Clear Chat History', on_click=clear_chat_history)
 
+# Function to upload file using Gemini's File API
+def upload_to_gemini(file_bytes, mime_type):
+    try:
+        # Upload the file using Gemini's File API
+        uploaded_file = genai.upload_file(BytesIO(file_bytes), mime_type=mime_type)
+        return uploaded_file
+    except Exception as e:
+        st.error(f"Error uploading file: {str(e)}")
+        return None
+
 # Function for generating response from Gemini, including chat history
 def generate_gemini_response(prompt_input, files=None):
     model = genai.GenerativeModel(
@@ -77,7 +88,7 @@ def generate_gemini_response(prompt_input, files=None):
     
     if files:
         for file in files:
-            chat.send_message(file)  # Directly send the file to chat without custom functions
+            chat.send_message(file)
     
     response = chat.send_message(prompt_input)
     return response.text
@@ -92,10 +103,11 @@ if use_image:
     if image:
         st.image(image, caption="Uploaded Image", use_column_width=True)
         st.session_state.messages.append({"role": "model", "parts": ["Processing image..."]})
-        # Directly upload file using Google's API
+        # Directly upload file using Gemini's File API
         try:
-            image_file = genai.File.create(image.read(), mime_type="image/jpeg")
-            files.append(image_file)
+            image_file = upload_to_gemini(image.read(), mime_type="image/jpeg")
+            if image_file:
+                files.append(image_file)
         except Exception as e:
             st.error(f"Error uploading image: {str(e)}")
 
@@ -106,8 +118,9 @@ if use_video:
         st.video(video)
         st.session_state.messages.append({"role": "model", "parts": ["Processing video..."]})
         try:
-            video_file = genai.File.create(video.read(), mime_type="video/mp4")
-            files.append(video_file)
+            video_file = upload_to_gemini(video.read(), mime_type="video/mp4")
+            if video_file:
+                files.append(video_file)
         except Exception as e:
             st.error(f"Error uploading video: {str(e)}")
 
@@ -118,8 +131,9 @@ if use_audio:
         st.audio(audio)
         st.session_state.messages.append({"role": "model", "parts": ["Processing audio..."]})
         try:
-            audio_file = genai.File.create(audio.read(), mime_type="audio/ogg")
-            files.append(audio_file)
+            audio_file = upload_to_gemini(audio.read(), mime_type="audio/ogg")
+            if audio_file:
+                files.append(audio_file)
         except Exception as e:
             st.error(f"Error uploading audio: {str(e)}")
 
@@ -134,8 +148,9 @@ if use_document:
             mime_type = "text/plain"
         st.session_state.messages.append({"role": "model", "parts": ["Processing document..."]})
         try:
-            doc_file = genai.File.create(document.read(), mime_type=mime_type)
-            files.append(doc_file)
+            doc_file = upload_to_gemini(document.read(), mime_type=mime_type)
+            if doc_file:
+                files.append(doc_file)
         except Exception as e:
             st.error(f"Error uploading document: {str(e)}")
 
