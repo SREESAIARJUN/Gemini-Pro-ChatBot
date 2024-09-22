@@ -89,6 +89,27 @@ def display_message(message):
             </div>
             """, unsafe_allow_html=True
         )
+        if message.get("image"):
+            # Display the uploaded image thumbnail next to the user's message
+            st.markdown(
+                f"""
+                <div style='display: flex; justify-content: flex-end;'>
+                    <img src="data:image/png;base64,{message['image']}" 
+                    style='max-width: 150px; max-height: 150px; margin-left: 10px; border-radius: {BORDER_RADIUS};' />
+                </div>
+                """, unsafe_allow_html=True
+            )
+        elif message.get("video"):
+            # Display the uploaded video thumbnail next to the user's message
+            st.markdown(
+                f"""
+                <div style='display: flex; justify-content: flex-end;'>
+                    <video controls style='max-width: 300px; max-height: 300px; margin-left: 10px; border-radius: {BORDER_RADIUS};'>
+                        <source src="data:video/mp4;base64,{message['video']}" type="video/mp4" />
+                    </video>
+                </div>
+                """, unsafe_allow_html=True
+            )
     else:
         st.markdown(
             f"""
@@ -143,8 +164,8 @@ if use_image:
     image = st.file_uploader("Upload an image", type=["png", "jpeg", "webp", "heic", "heif"])
     if image:
         image_bytes = image.read()
-        st.image(image, caption="Uploaded Image", use_column_width=True)
-        st.session_state.messages.append({"role": "model", "content": "Processing image... 🖼️"})
+        st.session_state.messages.append({"role": "user", "content": prompt, "image": image_bytes})
+        st.image(image, caption="Uploaded Image", use_column_width=False, width=150)
         image_file = upload_file_to_gemini(image_bytes, image.type)
         files.append(wait_for_file_active(image_file))
         st.session_state["use_image"] = False  # Untick image checkbox after upload
@@ -153,8 +174,8 @@ if use_video:
     video = st.file_uploader("Upload a video", type=["mp4", "mpeg", "mov", "avi", "x-flv", "mpg", "webm", "wmv", "3gpp"])
     if video:
         video_bytes = video.read()
+        st.session_state.messages.append({"role": "user", "content": prompt, "video": video_bytes})
         st.video(video)
-        st.session_state.messages.append({"role": "model", "content": "Processing video... 🎬"})
         video_file = upload_file_to_gemini(video_bytes, video.type)
         files.append(wait_for_file_active(video_file))
         st.session_state["use_video"] = False  # Untick video checkbox after upload
