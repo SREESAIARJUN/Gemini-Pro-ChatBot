@@ -2,6 +2,7 @@ import streamlit as st
 import os
 import time
 import google.generativeai as genai
+from io import BytesIO
 import tempfile
 
 # App title and configuration
@@ -25,15 +26,15 @@ with st.sidebar:
     st.subheader('Input Types')
     use_image = st.checkbox("Upload Image")
     use_video = st.checkbox("Upload Video")
-    use_audio = st.checkbox("Upload Audio")
-    use_document = st.checkbox("Upload Document")
+    # use_audio = st.checkbox("Upload Audio")
+    # use_document = st.checkbox("Upload Document")
 
     # Adjustable model parameters
     st.subheader('Model Parameters')
-    temperature = st.slider("Temperature", 0.0, 1.0, 0.9, step=0.1)
+    temperature = st.slider("Temperature", 0.0, 2.0, 1.0, step=0.1)
     top_p = st.slider("Top P", 0.0, 1.0, 0.95, step=0.05)
-    top_k = st.slider("Top K", 1, 100, 40)
-    max_output_tokens = st.slider("Max Output Tokens", 100, 8192, 1024)
+    top_k = st.slider("Top K", 1, 100, 64)
+    max_output_tokens = st.slider("Max Output Tokens", 100, 8192, 8192)
 
 # Model configuration
 generation_config = {
@@ -49,36 +50,19 @@ def upload_file_to_gemini(file_bytes, mime_type):
         temp_file.write(file_bytes)
         temp_file_path = temp_file.name
     
-    try:
-        file = genai.upload_file(temp_file_path, mime_type=mime_type)
-        return file
-    except Exception as e:
-        st.error(f"Error uploading file: {str(e)}")
-        return None
-    finally:
-        os.unlink(temp_file_path)  # Clean up the temporary file
+    file = genai.upload_file(path=temp_file_path)
+    os.unlink(temp_file_path)  # Clean up the temporary file
+    return file
 
 # Function to wait for files to be ready
 def wait_for_file_active(file):
-    if file is None:
-        return None
-    
-    max_attempts = 30
-    for _ in range(max_attempts):
-        try:
-            updated_file = genai.get_file(file.name)
-            if updated_file.state.name == "ACTIVE":
-                return updated_file
-            elif updated_file.state.name == "FAILED":
-                st.error(f"File {file.name} failed to process")
-                return None
-            time.sleep(1)
-        except Exception as e:
-            st.error(f"Error checking file status: {str(e)}")
-            return None
-    
-    st.error(f"Timeout waiting for file {file.name} to become active")
-    return None
+    while True:
+        updated_file = genai.get_file(file.name)
+        if updated_file.state.name == "ACTIVE":
+            return updated_file
+        elif updated_file.state.name == "FAILED":
+            raise ValueError(f"File {file.name} failed to process")
+        time.sleep(10)
 
 # Display or clear chat messages
 if "messages" not in st.session_state:
@@ -103,6 +87,7 @@ def generate_gemini_response(prompt_input, files=None):
             {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
             {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
         ],
+        system_instruction = "You are Mavericks Bot, an advanced AI assistant created by Team Mavericks. You possess sophisticated image and video recognition capabilities, allowing you to analyze, understand, and provide insights on visual content. You engage in real-time interactions by analyzing images and videos uploaded by users. Additionally, you support multimedia-based responses and generate insights or summaries based on visual content."
     )
     
     chat = model.start_chat(history=[
@@ -112,63 +97,50 @@ def generate_gemini_response(prompt_input, files=None):
     
     contents = []
     if files:
-        contents.extend([file for file in files if file is not None])
+        contents.extend(files)
     contents.append(prompt_input)
     
-    try:
-        response = chat.send_message(contents)
-        return response.text
-    except Exception as e:
-        st.error(f"Error generating response: {str(e)}")
-        return "I'm sorry, but I encountered an error while processing your request. Please try again."
+    response = chat.send_message(contents)
+    return response.text
 
 # Main content: File Upload and Chat Input
 files = []
 prompt = st.chat_input()
 
-# Image upload
 if use_image:
-    image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg", "webp", "heic", "heif"])
+    image = st.file_uploader("Upload an image", type=["png", "jpeg", "webp", "heic", "heif"])
     if image:
         image_bytes = image.read()
         st.image(image, caption="Uploaded Image", use_column_width=True)
         st.session_state.messages.append({"role": "model", "content": "Processing image..."})
-        image_file = upload_file_to_gemini(image_bytes, f"image/{image.type}")
-        if image_file:
-            files.append(wait_for_file_active(image_file))
+        image_file = upload_file_to_gemini(image_bytes, image.type)
+        files.append(wait_for_file_active(image_file))
 
-# Video upload
 if use_video:
-    video = st.file_uploader("Upload a video", type=["mp4", "mpeg", "mov", "avi", "flv", "mpg", "webm", "wmv", "3gpp"])
+    video = st.file_uploader("Upload a video", type=["mp4", "mpeg", "mov", "avi", "x-flv", "mpg", "webm", "wmv", "3gpp"])
     if video:
         video_bytes = video.read()
         st.video(video)
         st.session_state.messages.append({"role": "model", "content": "Processing video..."})
-        video_file = upload_file_to_gemini(video_bytes, f"video/{video.type}")
-        if video_file:
-            files.append(wait_for_file_active(video_file))
+        video_file = upload_file_to_gemini(video_bytes, video.type)
+        files.append(wait_for_file_active(video_file))
 
-# Audio upload
-if use_audio:
-    audio = st.file_uploader("Upload an audio file", type=["wav", "mp3", "aiff", "aac", "ogg", "flac"])
-    if audio:
-        audio_bytes = audio.read()
-        st.audio(audio)
-        st.session_state.messages.append({"role": "model", "content": "Processing audio..."})
-        audio_file = upload_file_to_gemini(audio_bytes, f"audio/{audio.type}")
-        if audio_file:
-            files.append(wait_for_file_active(audio_file))
+# if use_audio:
+#     audio = st.file_uploader("Upload an audio file", type=["wav", "mp3", "aiff", "aac", "ogg", "flac"])
+#     if audio:
+#         audio_bytes = audio.read()
+#         st.audio(audio)
+#         st.session_state.messages.append({"role": "model", "content": "Processing audio..."})
+#         audio_file = upload_file_to_gemini(audio_bytes, audio.type)
+#         files.append(wait_for_file_active(audio_file))
 
-# Document upload
-if use_document:
-    document = st.file_uploader("Upload a document", type=["txt", "pdf"])
-    if document:
-        document_bytes = document.read()
-        st.session_state.messages.append({"role": "model", "content": f"Processing document: {document.name}"})
-        mime_type = "application/pdf" if document.type == "pdf" else "text/plain"
-        document_file = upload_file_to_gemini(document_bytes, mime_type)
-        if document_file:
-            files.append(wait_for_file_active(document_file))
+# if use_document:
+#     document = st.file_uploader("Upload a document", type=["txt", "pdf", "docx"])
+#     if document:
+#         document_bytes = document.read()
+#         st.session_state.messages.append({"role": "model", "content": f"Processing document: {document.name}"})
+#         document_file = upload_file_to_gemini(document_bytes, document.type)
+#         files.append(wait_for_file_active(document_file))
 
 # Generate response when a prompt is entered
 if prompt:
