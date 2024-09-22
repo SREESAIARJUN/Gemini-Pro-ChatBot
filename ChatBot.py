@@ -8,9 +8,13 @@ import tempfile
 # App title and configuration
 st.set_page_config(page_title="💬 Mavericks Bot", layout="wide")
 
-# Define some style constants
-USER_COLOR = "#f0f0f0"  # User's message background color
-MODEL_COLOR = "#e0f7fa"  # Model's message background color
+# Define style constants for WoW-like design
+USER_COLOR = "#282c34"  # Dark background for user message
+MODEL_COLOR = "#1f6f8b"  # Cool blue background for model message
+USER_TEXT_COLOR = "#a0aec0"  # Light text for user
+MODEL_TEXT_COLOR = "#e2e8f0"  # Light text for model
+BORDER_RADIUS = "12px"  # Rounded corners for chat bubbles
+SHADOW_EFFECT = "0px 4px 8px rgba(0, 0, 0, 0.3)"  # Shadow effect for depth
 USER_LOGO = "🧑‍💻"  # User's logo
 MODEL_LOGO = "🤖"  # Model's logo
 
@@ -77,7 +81,8 @@ def display_message(message):
     if message["role"] == "user":
         st.markdown(
             f"""
-            <div style='text-align: right; background-color: {USER_COLOR}; padding: 10px; border-radius: 10px; margin: 5px;'>
+            <div style='text-align: right; background-color: {USER_COLOR}; color: {USER_TEXT_COLOR}; 
+            padding: 12px; border-radius: {BORDER_RADIUS}; margin: 8px; box-shadow: {SHADOW_EFFECT};'>
                 {USER_LOGO} {message["content"]}
             </div>
             """, unsafe_allow_html=True
@@ -85,7 +90,8 @@ def display_message(message):
     else:
         st.markdown(
             f"""
-            <div style='text-align: left; background-color: {MODEL_COLOR}; padding: 10px; border-radius: 10px; margin: 5px;'>
+            <div style='text-align: left; background-color: {MODEL_COLOR}; color: {MODEL_TEXT_COLOR}; 
+            padding: 12px; border-radius: {BORDER_RADIUS}; margin: 8px; box-shadow: {SHADOW_EFFECT};'>
                 {MODEL_LOGO} {message["content"]}
             </div>
             """, unsafe_allow_html=True
@@ -109,7 +115,7 @@ def generate_gemini_response(prompt_input, files=None):
             {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
             {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
         ],
-        system_instruction = "You are Mavericks Bot, an advanced AI assistant created by Team Mavericks. You possess sophisticated image and video recognition capabilities, allowing you to analyze, understand, and provide insights on visual content. You engage in real-time interactions by analyzing images and videos uploaded by users. Additionally, you support multimedia-based responses and generate insights or summaries based on visual content."
+        system_instruction="You are Mavericks Bot, an advanced AI assistant created by Team Mavericks. You possess sophisticated image and video recognition capabilities, allowing you to analyze, understand, and provide insights on visual content. You engage in real-time interactions by analyzing images and videos uploaded by users. Additionally, you support multimedia-based responses and generate insights or summaries based on visual content."
     )
     
     chat = model.start_chat(history=[
@@ -127,14 +133,14 @@ def generate_gemini_response(prompt_input, files=None):
 
 # Main content: File Upload and Chat Input
 files = []
-prompt = st.chat_input()
+prompt = st.chat_input(placeholder="Type your message here...")
 
 if use_image:
     image = st.file_uploader("Upload an image", type=["png", "jpeg", "webp", "heic", "heif"])
     if image:
         image_bytes = image.read()
         st.image(image, caption="Uploaded Image", use_column_width=True)
-        st.session_state.messages.append({"role": "model", "content": "Processing image..."})
+        st.session_state.messages.append({"role": "model", "content": "Processing image... 🖼️"})
         image_file = upload_file_to_gemini(image_bytes, image.type)
         files.append(wait_for_file_active(image_file))
         st.session_state["use_image"] = False  # Untick image checkbox after upload
@@ -144,7 +150,7 @@ if use_video:
     if video:
         video_bytes = video.read()
         st.video(video)
-        st.session_state.messages.append({"role": "model", "content": "Processing video..."})
+        st.session_state.messages.append({"role": "model", "content": "Processing video... 🎬"})
         video_file = upload_file_to_gemini(video_bytes, video.type)
         files.append(wait_for_file_active(video_file))
         st.session_state["use_video"] = False  # Untick video checkbox after upload
@@ -155,7 +161,7 @@ if prompt:
     display_message({"role": "user", "content": prompt})
 
     # Generate response from Gemini
-    with st.spinner("Thinking..."):
+    with st.spinner("Thinking... 🤔"):
         response = generate_gemini_response(prompt, files)
         st.session_state.messages.append({"role": "model", "content": response})
         display_message({"role": "model", "content": response})
