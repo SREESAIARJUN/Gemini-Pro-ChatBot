@@ -6,7 +6,13 @@ from io import BytesIO
 import tempfile
 
 # App title and configuration
-st.set_page_config(page_title="💬 Mavericks Bot")
+st.set_page_config(page_title="💬 Mavericks Bot", layout="wide")
+
+# Define some style constants
+USER_COLOR = "#f0f0f0"  # User's message background color
+MODEL_COLOR = "#e0f7fa"  # Model's message background color
+USER_LOGO = "🧑‍💻"  # User's logo
+MODEL_LOGO = "🤖"  # Model's logo
 
 # Sidebar: API key and model parameters
 with st.sidebar:
@@ -26,8 +32,6 @@ with st.sidebar:
     st.subheader('Input Types')
     use_image = st.checkbox("Upload Image")
     use_video = st.checkbox("Upload Video")
-    # use_audio = st.checkbox("Upload Audio")
-    # use_document = st.checkbox("Upload Document")
 
     # Adjustable model parameters
     st.subheader('Model Parameters')
@@ -68,9 +72,27 @@ def wait_for_file_active(file):
 if "messages" not in st.session_state:
     st.session_state.messages = [{"role": "model", "content": "How may I assist you today?"}]
 
+def display_message(message):
+    """Display a message with custom alignment, color, and logos."""
+    if message["role"] == "user":
+        st.markdown(
+            f"""
+            <div style='text-align: right; background-color: {USER_COLOR}; padding: 10px; border-radius: 10px; margin: 5px;'>
+                {USER_LOGO} {message["content"]}
+            </div>
+            """, unsafe_allow_html=True
+        )
+    else:
+        st.markdown(
+            f"""
+            <div style='text-align: left; background-color: {MODEL_COLOR}; padding: 10px; border-radius: 10px; margin: 5px;'>
+                {MODEL_LOGO} {message["content"]}
+            </div>
+            """, unsafe_allow_html=True
+        )
+
 for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.write(message["content"])
+    display_message(message)
 
 def clear_chat_history():
     st.session_state.messages = [{"role": "model", "content": "How may I assist you today?"}]
@@ -115,6 +137,7 @@ if use_image:
         st.session_state.messages.append({"role": "model", "content": "Processing image..."})
         image_file = upload_file_to_gemini(image_bytes, image.type)
         files.append(wait_for_file_active(image_file))
+        st.session_state["use_image"] = False  # Untick image checkbox after upload
 
 if use_video:
     video = st.file_uploader("Upload a video", type=["mp4", "mpeg", "mov", "avi", "x-flv", "mpg", "webm", "wmv", "3gpp"])
@@ -124,33 +147,22 @@ if use_video:
         st.session_state.messages.append({"role": "model", "content": "Processing video..."})
         video_file = upload_file_to_gemini(video_bytes, video.type)
         files.append(wait_for_file_active(video_file))
-
-# if use_audio:
-#     audio = st.file_uploader("Upload an audio file", type=["wav", "mp3", "aiff", "aac", "ogg", "flac"])
-#     if audio:
-#         audio_bytes = audio.read()
-#         st.audio(audio)
-#         st.session_state.messages.append({"role": "model", "content": "Processing audio..."})
-#         audio_file = upload_file_to_gemini(audio_bytes, audio.type)
-#         files.append(wait_for_file_active(audio_file))
-
-# if use_document:
-#     document = st.file_uploader("Upload a document", type=["txt", "pdf", "docx"])
-#     if document:
-#         document_bytes = document.read()
-#         st.session_state.messages.append({"role": "model", "content": f"Processing document: {document.name}"})
-#         document_file = upload_file_to_gemini(document_bytes, document.type)
-#         files.append(wait_for_file_active(document_file))
+        st.session_state["use_video"] = False  # Untick video checkbox after upload
 
 # Generate response when a prompt is entered
 if prompt:
     st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.write(prompt)
+    display_message({"role": "user", "content": prompt})
 
     # Generate response from Gemini
-    with st.chat_message("model"):
-        with st.spinner("Thinking..."):
-            response = generate_gemini_response(prompt, files)
-            st.write(response)
-            st.session_state.messages.append({"role": "model", "content": response})
+    with st.spinner("Thinking..."):
+        response = generate_gemini_response(prompt, files)
+        st.session_state.messages.append({"role": "model", "content": response})
+        display_message({"role": "model", "content": response})
+
+# Ensure checkboxes are unticked after file upload
+if "use_image" in st.session_state and not st.session_state["use_image"]:
+    st.session_state["use_image"] = False
+
+if "use_video" in st.session_state and not st.session_state["use_video"]:
+    st.session_state["use_video"] = False
