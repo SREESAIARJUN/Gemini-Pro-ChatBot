@@ -21,7 +21,7 @@ MODEL_LOGO = "🤖"  # Model's logo
 # Sidebar: API key and model parameters
 with st.sidebar:
     st.title('💬 Mavericks Chatbot')
-    st.write("This chatbot uses Google's Gemini API for advanced language, image, audio, video, and document processing.")
+    st.write("This chatbot uses Google's Gemini API for advanced language, image, video processing.")
     
     # API key input
     gemini_api_key = st.secrets.get('GEMINI_API_KEY') or st.text_input('Enter Gemini API key:', type='password')
